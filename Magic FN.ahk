@@ -1,54 +1,42 @@
 ﻿#Requires AutoHotkey v2.0
 
 ; Settings
-tap_threshold := 200  ; ms
-hold_threshold := 200 ; ms
+threshold := 100 ; ms
 
-; State tracking
-capslock_is_held := false
-capslock_was_tapped := false
+; State tracking, 0 up, 1 tap, 2 hold
+capslock_state := 0
 
 ; Main CapsLock handler with timer
 CapsLock::
 {
-    global capslock_is_held, capslock_was_tapped
-    
-    capslock_is_held := true
-    capslock_was_tapped := false
-    
-    ; Set a timer to check if it's being held
-    SetTimer check_capslock_hold, -hold_threshold
+    global capslock_state
+    capslock_state := 1
+    SetTimer caplocks_into_hold, threshold
 }
 
-CapsLock Up::
+CapsLock up::
 {
-    global capslock_is_held, capslock_was_tapped
-    
-    ; If timer already determined it was held, do nothing
-    if capslock_is_held
+    if capslock_state == 1
     {
-        ; It was a tap
-        capslock_was_tapped := true
         SetCapsLockState !GetKeyState("CapsLock", "T")
     }
-    
-    capslock_is_held := false
-    SetTimer check_capslock_hold, 0  ; Disable timer
+
+    global capslock_state
+    capslock_state := 0
 }
 
-check_capslock_hold()
+caplocks_into_hold()
 {
-    global capslock_is_held
-    
-    if capslock_is_held
+    SetTimer , 0
+    if capslock_state == 1
     {
-        ; CapsLock is being held - activate Fn layer
-        ; The layer is active via #HotIf below
+        global capslock_state
+        capslock_state := 2
     }
 }
 
 ; Magic Fn layer - active when CapsLock is held
-#HotIf capslock_is_held
+#HotIf capslock_state == 2
 {
     ; Navigation
     w::Up
