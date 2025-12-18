@@ -76,7 +76,11 @@ TapApps(){
     [::Home
     ]::End
 
+    ; Edit
+    Backspace::Delete
+
     ; Fn
+    Home::PrintScreen
     F12::Shutdown(9)
 }
 #HotIf
