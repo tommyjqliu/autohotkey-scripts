@@ -1,42 +1,72 @@
-﻿#Requires AutoHotkey v2.0
+﻿; Configuration (adjust as needed)
+threshold := 100 ; Time (ms) to distinguish tap (short press) vs hold (long press)
+; LOG_FILE := "D:\Users\Tommy\Documents\AutoHotkey\test-logs.txt"
 
-; Settings
-threshold := 100 ; ms
+Log(str) {
+    global LOG_FILE
+    if (IsSet(LOG_FILE))
+    {
+        FileAppend str, LOG_FILE
+    }
+}
 
-; State tracking, 0 up, 1 tap, 2 hold
+; Core Logic
+MagicFnDown(&stateRef) {
+    if (stateRef == 0)
+    {
+        stateRef := 1
+        Log "key down" stateRef "`n"
+        IntoHold() {
+            SetTimer , 0
+            if (stateRef == 1)
+            {
+                stateRef := 2
+                Log "key holding" stateRef "`n"
+            }
+        }
+        SetTimer IntoHold, threshold 
+    }
+}
+
+MagicFnUp(&stateRef, tapFn?) {
+    Log "key up" stateRef "`n"
+    if (stateRef == 1 && IsSet(tapFn))
+    {
+        tapFn()
+    }
+    stateRef := 0 
+}
+
+
+; State tracking (0 = up, 1 = tap, 2 = hold)
 capslock_state := 0
-
-; Main CapsLock handler with timer
-CapsLock::
-{
+CapsLock::{
     global capslock_state
-    capslock_state := 1
-    SetTimer caplocks_into_hold, threshold
+    MagicFnDown(&capslock_state)
 }
-
-CapsLock up::
-{
-    if capslock_state == 1
-    {
-        SetCapsLockState !GetKeyState("CapsLock", "T")
-    }
-
+CapsLock Up::{
     global capslock_state
-    capslock_state := 0
+    MagicFnUp(&capslock_state, TapCaps)
+}
+TapCaps(){
+    SetCapsLockState !GetKeyState("CapsLock", "T")
 }
 
-caplocks_into_hold()
-{
-    SetTimer , 0
-    if capslock_state == 1
-    {
-        global capslock_state
-        capslock_state := 2
-    }
+apps_state := 0
+AppsKey::{
+    global apps_state
+    MagicFnDown(&apps_state)
+}
+AppsKey Up::{
+    global apps_state
+    MagicFnUp(&apps_state, TapApps)
+}
+TapApps(){
+    Send "{AppsKey}"
 }
 
-; Magic Fn layer - active when CapsLock is held
-#HotIf capslock_state == 2
+; Magic Fn layer - active when CapsLock or  is held
+#HotIf capslock_state == 2 || apps_state == 2
 {
     ; Navigation
     w::Up
@@ -45,5 +75,8 @@ caplocks_into_hold()
     d::Right
     [::Home
     ]::End
+
+    ; Fn
+    F12::Shutdown(9)
 }
 #HotIf
