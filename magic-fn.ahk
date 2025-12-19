@@ -40,11 +40,11 @@ MagicFnUp(&stateRef, tapFn?) {
 
 ; State tracking (0 = up, 1 = tap, 2 = hold)
 capslock_state := 0
-CapsLock::{
+*CapsLock::{
     global capslock_state
     MagicFnDown(&capslock_state)
 }
-CapsLock Up::{
+*CapsLock Up::{
     global capslock_state
     MagicFnUp(&capslock_state, TapCaps)
 }
@@ -53,11 +53,11 @@ TapCaps(){
 }
 
 apps_state := 0
-AppsKey::{
+*AppsKey::{
     global apps_state
     MagicFnDown(&apps_state)
 }
-AppsKey Up::{
+*AppsKey Up::{
     global apps_state
     MagicFnUp(&apps_state, TapApps)
 }
@@ -65,7 +65,7 @@ TapApps(){
     Send "{AppsKey}"
 }
 
-; Magic Fn layer - active when CapsLock or  is held
+; Magic Fn layer 1
 #HotIf capslock_state == 2 || apps_state == 2
 {
     ; Navigation
@@ -80,7 +80,16 @@ TapApps(){
     Backspace::Delete
 
     ; Fn
+    F1::send "{Media_Prev}"
+    F2::send "{Media_Play_Pause}"
+    F3::send "{Media_Next}" 
     Home::PrintScreen
-    F12::Shutdown(9)
+}
+#HotIf
+
+; Magic Fn layer 2
+#HotIf capslock_state == 2 && apps_state == 2
+{
+    Delete::Shutdown(9)
 }
 #HotIf
